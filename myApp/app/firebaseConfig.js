@@ -1,8 +1,7 @@
-// firebaseConfig.js
+// app/firebaseConfig.js
 import { initializeApp } from "firebase/app";
-import { initializeAuth, getReactNativePersistence } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBvcrjPk0Na1nUUYpmSV4cjthRyqO3aQ2o", 
@@ -15,9 +14,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Initialize Auth with AsyncStorage persistence
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
-});
+// Firebase Auth (pa persistence custom, funksionon automatikisht në web)
+export const auth = getAuth(app);
 
+// Firestore database
 export const db = getFirestore(app);

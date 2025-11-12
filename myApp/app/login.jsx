@@ -5,8 +5,8 @@ import {
   TextInput,
   Button,
   StyleSheet,
-  Alert,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -14,6 +14,7 @@ import {
   signInWithEmailAndPassword,
   signInWithCredential,
   GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { app } from "./firebaseConfig";
 import * as WebBrowser from "expo-web-browser";
@@ -29,8 +30,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
 
-  // 🔹 Login with Email/Password
+  // 📧 Email + Password login
   const handleEmailLogin = async () => {
     if (!email || !password) {
       setError("Please fill in all fields");
@@ -41,40 +43,61 @@ export default function LoginScreen() {
       await signInWithEmailAndPassword(auth, email, password);
       router.replace("/home");
     } catch (err) {
+      console.error(err);
       setError("Invalid email or password.");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Google Login setup
+  // 🔹 Google Login setup (Expo)
   const [request, response, promptAsync] = Google.useAuthRequest({
-    iosClientId: "690960010472-qp7s47lccr4bb6674rnq4uttr7nptug1.apps.googleusercontent.com",
+    iosClientId:
+      "690960010472-qp7s47lccr4bb6674rnq4uttr7nptug1.apps.googleusercontent.com",
+    androidClientId:
+      "690960010472-fpt1h6d4e2ktp8p6gb4oel6pgog43l6g.apps.googleusercontent.com",
+    webClientId:
+      "690960010472-qvsus8fihh6r8nbm8i95j8t7vfvbrrf1.apps.googleusercontent.com",
   });
 
+  // 🎯 Funksioni për Google login në web
+  const handleGoogleWebLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      setUser(result.user);
+      console.log("✅ Google login successful (web)");
+      router.replace("/home");
+    } catch (error) {
+      console.error("Google login error (web):", error);
+      setError("Google login failed on web.");
+    }
+  };
+
+  // 📱 Funksioni për Google login në mobile
   useEffect(() => {
-    const handleGoogleAuth = async () => {
+    const handleMobileGoogleLogin = async () => {
       if (response?.type === "success") {
         try {
           const { id_token } = response.params;
           const credential = GoogleAuthProvider.credential(id_token);
           await signInWithCredential(auth, credential);
-          console.log("✅ Google login successful");
+          console.log("✅ Google login successful (mobile)");
           router.replace("/home");
         } catch (error) {
-          console.error("Google login error:", error);
+          console.error("Google login error (mobile):", error);
           setError("Google login failed.");
         }
       }
     };
-
-    handleGoogleAuth();
+    handleMobileGoogleLogin();
   }, [response]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Log In to Your Account</Text>
 
+      {/* Email login */}
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -92,19 +115,26 @@ export default function LoginScreen() {
         editable={!loading}
       />
 
-      <Button 
-        title={loading ? "Logging in..." : "Log In with Email"} 
+      <Button
+        title={loading ? "Logging in..." : "Log In with Email"}
         onPress={handleEmailLogin}
         disabled={loading}
       />
 
-      <Text style={{ marginVertical: 20, fontWeight: "600", color: "#666" }}>or</Text>
+      <Text style={{ marginVertical: 20, fontWeight: "600", color: "#666" }}>
+        or
+      </Text>
 
+      {/* Google Login */}
       <Button
         title="Log In with Google"
-        onPress={() => promptAsync()}
         color="#DB4437"
-        disabled={!request || loading}
+        onPress={
+          Platform.OS === "web"
+            ? handleGoogleWebLogin
+            : () => promptAsync() // mobile
+        }
+        disabled={loading || (!request && Platform.OS !== "web")}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -116,6 +146,7 @@ export default function LoginScreen() {
   );
 }
 
+// 🎨 Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,

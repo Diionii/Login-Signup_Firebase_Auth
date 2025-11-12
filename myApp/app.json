@@ -24,6 +24,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
+      "bundleIdentifier":"208116214525-igss8k4gc3gogqc91hokpt5vvcb6vk7s.apps.googleusercontent.com",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
